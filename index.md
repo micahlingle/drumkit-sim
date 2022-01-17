@@ -1,37 +1,18 @@
-## Welcome to GitHub Pages
+## Studio Drumming, Reimagined
 
-You can use the [editor on GitHub](https://github.com/micahlingle/drumkit-sim/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+The goal of this project is to simulate playing a drumkit through programming-based means while still retaining a natural, swung sound. This will be accomplished by analyzing user-inputted audio recordings of users drumming on any number of distinct surfaces which have unique timbres. Each drum impact soundbyte will then be recognized, isolated, and normalized. Tone and tambre will then be recognized by performing clustering analysis on spectograms; each distinct surface being hit in the recording will be mapped to a virtual, simulated drum. Then, inserting drum samples depending on cluster labelings and recorded-sample amplitudes, a new drum track will be created which is able to accurately recreate the recorded demo with respect to both time and dynamic emphases.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### No studio required
 
-### Markdown
+Having a studio or expensive microphone setup is no problem. A recording must simply be inputted to the program to bring studio-quality sound and sampling to life in audio tracks.
+You can play drums anywhere - even on the kitchen sink. 
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+## Methodology
 
-```markdown
-Syntax highlighted code block
+In order to perform clustering on sounds, soundbytes must be represented in a numerical fashion. Because clustering should be performed based on the timbre of sounds, spectograms will be created to represent tonal frequency variations. 
+Then, spectograms will be analyzed by a CNN. Instead of the network performing classification or generating a numerical result, outputs (in vector form) will be taken from the convolutional layers before fully-connected layers are reached. 
+These vectors may then be used as input into a traditional soft-clustering algorithm. Thus, vectors, therefore images, therefore sounds are classified.
 
-# Header 1
-## Header 2
-### Header 3
+### Progress
 
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/micahlingle/drumkit-sim/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+This project is due for completion in early 2022. 
