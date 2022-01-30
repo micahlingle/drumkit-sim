@@ -5,10 +5,12 @@
 import os
 import wave
 from scipy.io import wavfile
+import librosa
+import numpy as np
 
+desiredRate = 22050
 
-
-
+# Find paths to audio files
 def getPaths(p = "./datasets/"):
 	# Add Mac support... does it work with .wav to begin with?
 	# File separators
@@ -27,30 +29,43 @@ def getPaths(p = "./datasets/"):
 		else:
 			paths.append(entry)
 		i += 1
-	#print("Recursively found files: ",paths)
+	print("Recursively found files: ",paths)
 	return paths
 	
-def openFile(paths):
+def aggAnalytics(paths):
 	
-	wav = wave.open(paths[0])
-	# python's wave analytics
-	print(f"File name: {paths[0]}")
+	waveAnalytics(paths[0])		# open the first file only for debug
+	skWaveAnalytics(paths[0])
+	
+# python's wave analytics
+def waveAnalytics(path : str):
+	wav = wave.open(path)
+	print(f"File name: {path}")
 	print("Sampling (frame) rate = ", wav.getframerate())
 	print("Total samples (frames) = ", wav.getnframes())
 	print("Duration = ", wav.getnframes()/wav.getframerate())
-	# scikit's wavfile analytics
-	rate, data = wavfile.read(paths[0])
+
+# SciKit's wave analytics
+def skWaveAnalytics(path):
+	rate, data = wavfile.read(path)
 	print("Sampling (frame) rate = ", rate)
 	print("Total samples (frames) = ", data.shape)
 	print(data)
+
+# Use librosa to get frequency bands
+def getLibr(path):
+	wav, sr = librosa.load(path, sr = desiredRate)
 	
-def analyzeFile():
-	#wav = wave.open()
-	print("Nothing")
+def rmRmsNoise(wav, sr):
+	# Compute rms amplitude
+	rms = np.sqrt(np.average(np.square(wav)))
+	# Based on absolute value of amplitude, zero out quiet bits
+	abs = np.abs(wav)
+	return np.where(abs > rms, wav, 0)
 	
 def main():
 	paths = getPaths()
-	openFile(paths)
+	aggAnalytics(paths)
 
 def test():
 	main()
