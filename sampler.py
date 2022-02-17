@@ -8,8 +8,11 @@ from scipy.io import wavfile
 import librosa
 import numpy as np
 import argparse as ap
+from sklearn.cluster import DBSCAN, KMeans
+from sklearn.mixture import GaussianMixture
 
 desiredRate = 22050
+numDrums = 0
 
 # Find paths to audio files
 def getPaths(p = "./datasets/"):
@@ -56,11 +59,53 @@ def skWaveAnalytics(path):
 
 # Use librosa to get frequency bands
 def getLibr(path):
+
 	wav, sr = librosa.load(path, sr = desiredRate)
 	wav = rmRmsNoise(wav)
+	wav = wav / np.max(wav)
+
 	print(len(wav))
 	for f in wav:
-		print(f)
+		print(f, end=",")
+	print(" ")
+
+	# Account for missed sample, interpolate for missing data
+	for f in range(len(wav)):
+		if (f != 0 and f != len(wav) - 1):
+			if (wav[f-1] != 0
+					and wav[f+1] != 0
+					and wav[f] == 0):
+				wav[f] = .5 * (wav[f-1] + wav[f+1])
+
+	ft = np.fft.fft(wav)
+	ft = np.real(ft)
+	ft = wav
+	ft = ft.reshape(-1, 1)
+
+	km = KMeans(n_clusters=numDrums)
+	y = km.fit_predict(ft)
+	print("KMEANS")
+	for i in y:
+		print(i, end=", ")
+	print("\n\n ")
+
+	gm = GaussianMixture(n_components=numDrums)
+	y = gm.fit_predict(ft)
+	print("GMM")
+	for i in y:
+		print(i, end=", ")
+	print("\n\n ")
+
+	db = DBSCAN(eps=.04, min_samples=int(desiredRate * .1))
+	y = db.fit_predict(ft)
+	print("DBSCAN")
+	for i in y:
+		print(i, end=", ")
+	print("\n\n ")
+
+
+	# https://stackoverflow.com/questions/52616617/python-mean-shift-clustering-of-complex-number-numpy-array 
+	# eig = np.linalg.eigh(wav)
 
 	
 def rmRmsNoise(wav):
@@ -81,8 +126,10 @@ def main():
 if (__name__ == "__main__"):
 	parser = ap.ArgumentParser()
 	parser.add_argument("sample_rate", type = int)
+	parser.add_argument("num_drums", type = int)
+
 	args = parser.parse_args()
-	print(args.sample_rate)
 	desiredRate = args.sample_rate
+	numDrums = args.num_drums + 1
 
 	main()
