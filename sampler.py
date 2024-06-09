@@ -4,15 +4,16 @@
 
 import os
 import wave
+from scipy import signal
 from scipy.io import wavfile
 import librosa
+from librosa import feature, core
 import numpy as np
 import argparse as ap
 from sklearn.cluster import DBSCAN, KMeans
 from sklearn.mixture import GaussianMixture
+import noisereduce as nr
 
-desiredRate = 22050
-numDrums = 0
 
 # Find paths to audio files
 def getPaths(p = "./datasets/"):
@@ -57,79 +58,59 @@ def skWaveAnalytics(path):
 	print("Total samples (frames) = ", data.shape)
 	print(data)
 
-# Use librosa to get frequency bands
-def getLibr(path):
-
-	wav, sr = librosa.load(path, sr = desiredRate)
-	wav = rmRmsNoise(wav)
-	wav = wav / np.max(wav)
-
-	print(len(wav))
-	for f in wav:
-		print(f, end=",")
-	print(" ")
-
-	# Account for missed sample, interpolate for missing data
-	for f in range(len(wav)):
-		if (f != 0 and f != len(wav) - 1):
-			if (wav[f-1] != 0
-					and wav[f+1] != 0
-					and wav[f] == 0):
-				wav[f] = .5 * (wav[f-1] + wav[f+1])
-
-	ft = np.fft.fft(wav)
-	ft = np.real(ft)
-	ft = wav
-	ft = ft.reshape(-1, 1)
-
-	km = KMeans(n_clusters=numDrums)
-	y = km.fit_predict(ft)
-	print("KMEANS")
-	for i in y:
-		print(i, end=", ")
-	print("\n\n ")
-
-	gm = GaussianMixture(n_components=numDrums)
-	y = gm.fit_predict(ft)
-	print("GMM")
-	for i in y:
-		print(i, end=", ")
-	print("\n\n ")
-
-	db = DBSCAN(eps=.04, min_samples=int(desiredRate * .1))
-	y = db.fit_predict(ft)
-	print("DBSCAN")
-	for i in y:
-		print(i, end=", ")
-	print("\n\n ")
-
-
-	# https://stackoverflow.com/questions/52616617/python-mean-shift-clustering-of-complex-number-numpy-array 
-	# eig = np.linalg.eigh(wav)
-
-	
-def rmRmsNoise(wav):
-	# Compute rms amplitude
-	rms = np.sqrt(np.average(np.square(wav))) 
-	print(f"rms is {rms}")
-	# Based on absolute value of amplitude, zero out quiet bits
-	abs = np.abs(wav)
-	return np.where(abs > rms, wav, 0)
 	
 def main():
-	paths = getPaths()
-	waveAnalytics(paths[0])
 
-	print(paths[0])
-	getLibr(paths[0])
-
-if (__name__ == "__main__"):
 	parser = ap.ArgumentParser()
-	parser.add_argument("sample_rate", type = int)
-	parser.add_argument("num_drums", type = int)
+	parser.add_argument("--sample-rate", type = int, default=48000)
+	parser.add_argument("--num-drums", type = int, default=3)
 
 	args = parser.parse_args()
-	desiredRate = args.sample_rate
-	numDrums = args.num_drums + 1
+	desired_rate = args.sample_rate
+
+	# Drums, and no drum.
+	num_drums = args.num_drums + 1
+
+	paths = getPaths()
+	path = paths[0]
+	waveAnalytics(path)
+
+	print(path)
+	
+	data, sr = librosa.load(path, sr = desired_rate)
+	np.save("data", data)
+
+	no_noise = nr.reduce_noise(y=data, sr=sr)
+	np.save("no_noise", no_noise)
+	wavfile.write("reduced_noise.wav", sr, no_noise)
+
+	# # find average threshold for percussive element decibel
+	# mse_array = feature.rms(y=no_noise, frame_length=2048, hop_length=512) ** 2
+	# mse_db_array = core.power_to_db(mse_array.squeeze())
+	# print(mse_db_array)
+	# mse_db_scalar = np.percentile(mse_db_array, .5)
+	# print(mse_db_scalar)
+
+	# Bandpass filter
+	sos = signal.butter(5, [200, 5000], 'bandpass', fs=sr, output='sos')
+	# sos = signal.butter(10, [20, 10000], 'bandpass', fs=sr, output='sos')
+	filtered = signal.sosfilt(sos, no_noise)
+
+	# intervals = librosa.effects.split(no_noise, top_db=mse_db_scalar)
+	intervals = librosa.effects.split(filtered)
+	print(intervals)
+
+	for i, interval in enumerate(intervals):
+		start, end = interval
+		wavfile.write(f"bandpass_heavy{i}.wav", sr, no_noise[start:end])
+
+	# normalized = no_noise / np.max(no_noise)
+	# np.save("normalized", normalized)
+
+
+
+
+if (__name__ == "__main__"):
+	
 
 	main()
