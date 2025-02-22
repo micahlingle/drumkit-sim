@@ -84,25 +84,13 @@ def main():
 	np.save("no_noise", no_noise)
 	wavfile.write("reduced_noise.wav", sr, no_noise)
 
-	# # find average threshold for percussive element decibel
-	# mse_array = feature.rms(y=no_noise, frame_length=2048, hop_length=512) ** 2
-	# mse_db_array = core.power_to_db(mse_array.squeeze())
-	# print(mse_db_array)
-	# mse_db_scalar = np.percentile(mse_db_array, .5)
-	# print(mse_db_scalar)
-
-	# Bandpass filter
-	sos = signal.butter(5, [200, 5000], 'bandpass', fs=sr, output='sos')
-	# sos = signal.butter(10, [20, 10000], 'bandpass', fs=sr, output='sos')
-	filtered = signal.sosfilt(sos, no_noise)
-
-	# intervals = librosa.effects.split(no_noise, top_db=mse_db_scalar)
-	intervals = librosa.effects.split(filtered)
+	# Librosa automatically accounts for RMS/MSE
+	intervals = librosa.effects.split(no_noise)
 	print(intervals)
 
 	for i, interval in enumerate(intervals):
 		start, end = interval
-		wavfile.write(f"bandpass_heavy{i}.wav", sr, no_noise[start:end])
+		wavfile.write(f"segment{i}.wav", sr, no_noise[start:end])
 
 	# normalized = no_noise / np.max(no_noise)
 	# np.save("normalized", normalized)
