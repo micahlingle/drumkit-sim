@@ -68,8 +68,7 @@ def main():
 	args = parser.parse_args()
 	desired_rate = args.sample_rate
 
-	# Drums, and no drum.
-	num_drums = args.num_drums + 1
+	num_drums = args.num_drums
 
 	paths = getPaths()
 	path = paths[0]
@@ -84,13 +83,17 @@ def main():
 	np.save("no_noise", no_noise)
 	wavfile.write("reduced_noise.wav", sr, no_noise)
 
+	# Bandpass filter to remove high frequency noise
+	sos = signal.butter(5, [200, 5000], 'bandpass', fs=sr, output='sos')
+	filtered = signal.sosfilt(sos, no_noise)
+
 	# Librosa automatically accounts for RMS/MSE
-	intervals = librosa.effects.split(no_noise)
+	intervals = librosa.effects.split(filtered)
 	print(intervals)
 
 	for i, interval in enumerate(intervals):
 		start, end = interval
-		wavfile.write(f"segment{i}.wav", sr, no_noise[start:end])
+		wavfile.write(f"bandpass_heavy{i}.wav", sr, no_noise[start:end])
 
 	# normalized = no_noise / np.max(no_noise)
 	# np.save("normalized", normalized)
