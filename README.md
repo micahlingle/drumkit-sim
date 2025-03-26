@@ -6,6 +6,12 @@ This will be accomplished by analyzing user-inputted audio recordings of users d
 ### Mar 25, 2025
 Added peak finding algorithm (with ≥80% accuracy in initial tests!)
 
+This marks an improvement over the initial segmentation method, as that would not distinguish individual hit sounds close together with a shared noise floor.
+
+Ultimately, the goal is to be able to support 16th notes, 32nd notes, and eventually flams. We'll see, but wanted to get the initial audio pipeline set up.
+
+Here's the initial results.
+
 Using `datasets/snaps.wav`, we can see 5 peaks found for 4 snaps.
 
 ![](https://i.postimg.cc/gchrHBBG/amplitudes.png)
