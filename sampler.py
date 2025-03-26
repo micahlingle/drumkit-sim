@@ -13,6 +13,7 @@ import argparse as ap
 from sklearn.cluster import DBSCAN, KMeans
 from sklearn.mixture import GaussianMixture
 import noisereduce as nr
+import matplotlib.pyplot as plt
 
 
 # Find paths to audio files
@@ -52,6 +53,18 @@ def sk_wave_analytics(path):
     print("Total samples (frames) = ", data.shape)
     print(data)
 
+def calculate_rms_noise(audio_data):
+  '''
+  Calculates the RMS noise of an audio signal.
+
+  Args:
+    audio_data: A NumPy array representing the audio signal.
+
+  Returns:
+    The RMS noise value.
+  '''
+  return np.sqrt(np.mean(audio_data**2))
+
 
 def segment_audio(data: np.ndarray, sr: int):
     '''
@@ -82,21 +95,44 @@ def segment_audio(data: np.ndarray, sr: int):
 
     no_noise = nr.reduce_noise(y=data, sr=sr)
     np.save("no_noise", no_noise)
-    wavfile.write("reduced_noise.wav", sr, no_noise)
+    wavfile.write("temp/reduced_noise.wav", sr, no_noise)
 
     # Bandpass filter to remove high frequency noise
     sos = signal.butter(5, [200, 5000], 'bandpass', fs=sr, output='sos')
     filtered = signal.sosfilt(sos, no_noise)
 
-    # Librosa automatically accounts for RMS/MSE
-    intervals = librosa.effects.split(filtered)
-    print(intervals)
+    # # Librosa automatically accounts for RMS/MSE
+    # intervals = librosa.effects.split(filtered)
+    # print(intervals)
 
-    for i, interval in enumerate(intervals):
-        start, end = interval
-        wavfile.write(f"bandpass_heavy{i}.wav", sr, no_noise[start:end])
+    # for i, interval in enumerate(intervals):
+    #     start, end = interval
+    #     wavfile.write(f"temp/bandpass_heavy{i}.wav", sr, no_noise[start:end])
+
+    # take absolute value
+    amplitude_over_time = np.absolute(filtered)
+    # noise_floor = calculate_rms_noise(amplitude_over_time)
+    # peak_indices, props = signal.find_peaks(filtered, height=noise_floor, width=sr/512)
+    # print(len(peak_indices))
+    # print(f'data: {data.shape}')
+    # x = np.arange(0, data.shape[0], 1)
+    # print(f'x: {x.size}')
+    # y = np.zeros(data.shape)
+    # y[peak_indices] = 1
     
+    # Widths: convolution array length
+    # Window size: size of window when evaluating if there is a peak or not
+    peak_indices = signal.find_peaks_cwt(amplitude_over_time, widths=(sr/5), window_size=sr/16)
+    print(len(peak_indices))
+    x = np.arange(0, data.shape[0], 1)
+    print(f'x: {x.size}')
+    y = np.zeros(data.shape)
+    y[peak_indices] = 1
 
+    plt.plot(x, y)
+    plt.ylabel('amplitude')
+    plt.xlabel('samples')
+    plt.savefig("sample_plot.png")
 
 def main():
 
@@ -111,8 +147,8 @@ def main():
     num_drums = args.num_drums
 
 
-    paths = get_paths()
-    path = paths[0]
+    # paths = get_paths()
+    path = "./datasets/snaps.wav"
     wave_analytics(path)
 
     print(path)
@@ -120,7 +156,7 @@ def main():
     data, sr = librosa.load(path, sr = desired_rate)
     np.save("data", data)
 
-    segment_audio()
+    segment_audio(data, sr)
 
     # normalized = no_noise / np.max(no_noise)
     # np.save("normalized", normalized)
