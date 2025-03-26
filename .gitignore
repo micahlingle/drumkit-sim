@@ -1,5 +1,7 @@
 # Project
 *.wav
+*.npy
+temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
