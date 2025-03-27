@@ -130,17 +130,17 @@ def segment_audio(data: np.ndarray, sr: int):
     # Quarter note
     MAX_BPM = 144
     MIN_SECONDS_PER_BEAT = 60/MAX_BPM
-    SIXTEENTH_LENGTH_SEC = MIN_SECONDS_PER_BEAT/4
-    sixteenth_length_sr = SIXTEENTH_LENGTH_SEC * sr
-    thirtysecond_length = sixteenth_length_sr / 2
+    SIXTEENTH_MIN_LENGTH_SEC = MIN_SECONDS_PER_BEAT/4
+    sixteenth_min_length_sr = SIXTEENTH_MIN_LENGTH_SEC * sr
 
     # Librosa peak finding
-    pre_max = sr / thirtysecond_length
-    post_max = sr / thirtysecond_length
-    pre_avg = sr / thirtysecond_length
-    post_avg = sr / thirtysecond_length
+    min_thirtysecond_length = sixteenth_min_length_sr / 2
+    pre_max = min_thirtysecond_length
+    post_max = min_thirtysecond_length
+    pre_avg = min_thirtysecond_length
+    post_avg = min_thirtysecond_length
     delta = noise_floor
-    wait = sixteenth_length_sr
+    wait = min_thirtysecond_length
     mask = False
     peak_indices = librosa.util.peak_pick(amplitude_over_time, pre_max=pre_max, post_max=post_max, pre_avg=pre_avg, post_avg=post_avg, delta=delta, wait=wait, sparse=not mask)
     print(len(peak_indices))
@@ -152,11 +152,22 @@ def segment_audio(data: np.ndarray, sr: int):
     plt.plot(x, amplitude_over_time)
     plt.ylabel('amplitude')
     plt.xlabel('samples')
-    plt.savefig("amplitude_librosa.png")
+    plt.savefig("amplitude_librosa2.png")
 
     # # Get audio around the time of the peak
     # for peak_index in peak_indices:
+    unit = sixteenth_min_length_sr / 10
+    ranges = []
+    for peak_index in peak_indices:
+        range_start = peak_index - unit
+        range_end = peak_index + 9 * unit
+        ranges.append((range_start, range_end))
 
+    ffts = []
+    for start, stop in ranges:
+        ffts.append(np.fft(filtered[start:stop]))
+    
+    print(ffts[0].size)
 
 def main():
 
@@ -172,7 +183,7 @@ def main():
 
 
     # paths = get_paths()
-    path = "./datasets/snaps.wav"
+    path = "./datasets/TightSnaps.wav"
     wave_analytics(path)
 
     print(path)
