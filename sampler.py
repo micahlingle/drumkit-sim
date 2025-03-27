@@ -131,16 +131,16 @@ def segment_audio(data: np.ndarray, sr: int):
     MAX_BPM = 144
     MIN_SECONDS_PER_BEAT = 60/MAX_BPM
     SIXTEENTH_MIN_LENGTH_SEC = MIN_SECONDS_PER_BEAT/4
-    sixteenth_min_length_sr = SIXTEENTH_MIN_LENGTH_SEC * sr
+    sixteenth_min_length_samples = int(SIXTEENTH_MIN_LENGTH_SEC * sr)
 
     # Librosa peak finding
-    min_thirtysecond_length = sixteenth_min_length_sr / 2
-    pre_max = min_thirtysecond_length
-    post_max = min_thirtysecond_length
-    pre_avg = min_thirtysecond_length
-    post_avg = min_thirtysecond_length
+    min_thirtysecond_samples = sixteenth_min_length_samples / 2
+    pre_max = min_thirtysecond_samples
+    post_max = min_thirtysecond_samples
+    pre_avg = min_thirtysecond_samples
+    post_avg = min_thirtysecond_samples
     delta = noise_floor
-    wait = min_thirtysecond_length
+    wait = min_thirtysecond_samples
     mask = False
     peak_indices = librosa.util.peak_pick(amplitude_over_time, pre_max=pre_max, post_max=post_max, pre_avg=pre_avg, post_avg=post_avg, delta=delta, wait=wait, sparse=not mask)
     print(len(peak_indices))
@@ -152,11 +152,11 @@ def segment_audio(data: np.ndarray, sr: int):
     plt.plot(x, amplitude_over_time)
     plt.ylabel('amplitude')
     plt.xlabel('samples')
-    plt.savefig("amplitude_librosa2.png")
+    plt.savefig("amplitude_librosa.png")
 
     # # Get audio around the time of the peak
     # for peak_index in peak_indices:
-    unit = sixteenth_min_length_sr / 10
+    unit = int(sixteenth_min_length_samples / 10)
     ranges = []
     for peak_index in peak_indices:
         range_start = peak_index - unit
@@ -165,9 +165,20 @@ def segment_audio(data: np.ndarray, sr: int):
 
     ffts = []
     for start, stop in ranges:
-        ffts.append(np.fft(filtered[start:stop]))
+        ffts.append(np.fft.fft(filtered[start:stop]))
     
     print(ffts[0].size)
+
+    for i, fft in enumerate(ffts):
+        plt.clf()
+        x = np.fft.fftfreq(sixteenth_min_length_samples, 1/sr)
+        # Only get positive values
+        freq_lower = 0
+        freq_upper = sixteenth_min_length_samples//2
+        plt.plot(x[freq_lower:freq_upper], np.abs(fft[freq_lower:freq_upper]))
+        plt.ylabel('amplitude')
+        plt.xlabel('Hz')
+        plt.savefig(f'fft{i}.png')
 
 def main():
 
@@ -183,7 +194,7 @@ def main():
 
 
     # paths = get_paths()
-    path = "./datasets/TightSnaps.wav"
+    path = "./datasets/snaps.wav"
     wave_analytics(path)
 
     print(path)
