@@ -101,17 +101,9 @@ def segment_audio(data: np.ndarray, sr: int):
     sos = signal.butter(5, [200, 5000], 'bandpass', fs=sr, output='sos')
     filtered = signal.sosfilt(sos, no_noise)
 
-    # # Librosa automatically accounts for RMS/MSE
-    # intervals = librosa.effects.split(filtered)
-    # print(intervals)
-
-    # for i, interval in enumerate(intervals):
-    #     start, end = interval
-    #     wavfile.write(f"temp/bandpass_heavy{i}.wav", sr, no_noise[start:end])
-
-    # take absolute value
+    # take absolute value to get amplitude rather than actual signal
     amplitude_over_time = np.absolute(filtered)
-    # noise_floor = calculate_rms_noise(amplitude_over_time)
+    noise_floor = calculate_rms_noise(amplitude_over_time)
     # peak_indices, props = signal.find_peaks(filtered, height=noise_floor, width=sr/512)
     # print(len(peak_indices))
     # print(f'data: {data.shape}')
@@ -122,17 +114,49 @@ def segment_audio(data: np.ndarray, sr: int):
     
     # Widths: convolution array length
     # Window size: size of window when evaluating if there is a peak or not
-    peak_indices = signal.find_peaks_cwt(amplitude_over_time, widths=(sr/5), window_size=sr/16)
+    # peak_indices = signal.find_peaks_cwt(amplitude_over_time, widths=(sr/5), window_size=sr/16)
+    # print(len(peak_indices))
+    # x = np.arange(0, data.shape[0], 1)
+    # print(f'x: {x.size}')
+    # y = np.zeros(data.shape)
+    # y[peak_indices] = 1
+
+    # Convolution actually made librosa peak finding perform with more false positives on notes with long decay
+    # kernel = np.linspace(1, 0, 5)
+    # print(kernel)
+    # smoothed = np.convolve(amplitude_over_time, kernel, mode='same')
+    
+    # Let's do 0.104 seconds per hit--that's high enough resolution for 16th notes at 144bpm.
+    # Quarter note
+    MAX_BPM = 144
+    MIN_SECONDS_PER_BEAT = 60/MAX_BPM
+    SIXTEENTH_LENGTH_SEC = MIN_SECONDS_PER_BEAT/4
+    sixteenth_length_sr = SIXTEENTH_LENGTH_SEC * sr
+    thirtysecond_length = sixteenth_length_sr / 2
+
+    # Librosa peak finding
+    pre_max = sr / thirtysecond_length
+    post_max = sr / thirtysecond_length
+    pre_avg = sr / thirtysecond_length
+    post_avg = sr / thirtysecond_length
+    delta = noise_floor
+    wait = sixteenth_length_sr
+    mask = False
+    peak_indices = librosa.util.peak_pick(amplitude_over_time, pre_max=pre_max, post_max=post_max, pre_avg=pre_avg, post_avg=post_avg, delta=delta, wait=wait, sparse=not mask)
     print(len(peak_indices))
     x = np.arange(0, data.shape[0], 1)
-    print(f'x: {x.size}')
     y = np.zeros(data.shape)
     y[peak_indices] = 1
 
     plt.plot(x, y)
+    plt.plot(x, amplitude_over_time)
     plt.ylabel('amplitude')
     plt.xlabel('samples')
-    plt.savefig("sample_plot.png")
+    plt.savefig("amplitude_librosa.png")
+
+    # # Get audio around the time of the peak
+    # for peak_index in peak_indices:
+
 
 def main():
 

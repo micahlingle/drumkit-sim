@@ -3,6 +3,19 @@ The goal of this project is to create realistic MIDI drum tracks which are not t
 This will be accomplished by analyzing user-inputted audio recordings of users drumming on any number of distinct surfaces which have unique timbres. Each drum sound hit will then be recognized, isolated, and normalized. Tone and tambre will then be recognized by performing machine learning on audio samples; each distinct surface being hit in the recording will be mapped to a virtual, simulated drum. Then, the program will insert samples depending on cluster labelings and amplitudes, creating a new drum track.
 
 # Updates
+### Mar 26, 2025
+Improved peak finding algorithm. 
+
+I noticed that peaks were slightly right-shifted. I wanted to make them accurate to the initial attack of the note. 
+
+Librosa peak finding seems a bit faster, possibly more intuitive. I think it forgoes convolution. I intended to use my own convolution algorithm, but it seems the intuitive method is pretty accurate. 
+
+Here's the new graphs:
+
+![](https://i.postimg.cc/w3TwczBx/amplitude-librosa.png)
+
+![](https://i.postimg.cc/7bsmKRC3/amplitude-librosa2.png)
+
 ### Mar 25, 2025
 Added peak finding algorithm (with ≥80% accuracy in initial tests!)
 
