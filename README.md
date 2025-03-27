@@ -4,7 +4,17 @@ This will be accomplished by analyzing user-inputted audio recordings of users d
 
 # Updates
 ### Mar 26, 2025
-Improved peak finding algorithm. 
+
+#### Implemented segmentation and FFT
+Segmented audio and implemented FFT with graph. We can now see our results
+
+![](readme-assets/fft_0_0.png)
+![](readme-assets/fft_0_1.png)
+
+![](readme-assets/fft_0_2.png)
+![](readme-assets/fft_0_3.png)
+
+#### Improved peak finding algorithm
 
 I noticed that peaks were slightly right-shifted. I wanted to make them accurate to the initial attack of the note. 
 
@@ -12,9 +22,9 @@ Librosa peak finding seems a bit faster, possibly more intuitive. I think it for
 
 Here's the new graphs:
 
-![](https://i.postimg.cc/8kLxGPQv/amplitude-librosa.png)
+![](readme-assets/peak_finding_1_0.png)
 
-![](https://i.postimg.cc/RV9yZ54D/amplitude-librosa2.png)
+![](readme-assets/peak_finding_1_1.png)
 
 ### Mar 25, 2025
 Added peak finding algorithm (with ≥80% accuracy in initial tests!)
@@ -27,18 +37,18 @@ Here's the initial results.
 
 Using `datasets/snaps.wav`, we can see 5 peaks found for 4 snaps.
 
-![](https://i.postimg.cc/gchrHBBG/amplitudes.png)
+![](readme-assets/peak_finding_0_0.png)
 
 Using `datasets/TightSnaps.wav`, we can see, for 7 major sounds, there are 7 peaks. Amazing!
 
 The flams aren't working quite yet, but we can revisit that in the near future. Onto the machine learning!
 
-![](https://i.postimg.cc/fRzLZWWb/amplitudes2.png)
+![](readme-assets/peak_finding_0_1.png)
 
 ### Jun 8, 2024
 Added rudimentary audio segmentation based on audio above/below amplitude threshold
 
-#### Feb 16, 2022
+### Feb 16, 2022
 Gaussian Mixture Model currently performs the best, even before FFT. 
 Trials to be run
 * Using vs not using FFT
