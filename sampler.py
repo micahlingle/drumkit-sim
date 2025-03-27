@@ -65,45 +65,33 @@ def calculate_rms_noise(audio_data):
   '''
   return np.sqrt(np.mean(audio_data**2))
 
+# Let's do 0.104 seconds per hit--that's high enough resolution for 16th notes at 144bpm.
+# Quarter note
+MAX_BPM = 144
+MIN_SECONDS_PER_BEAT = 60/MAX_BPM
+SIXTEENTH_MIN_LENGTH_SEC = MIN_SECONDS_PER_BEAT/4
 
-def segment_audio(data: np.ndarray, sr: int):
+def preprocess_audio(data: np.ndarray, sr: int):
     '''
-    Audio segmentation pipeline.
-    - The open question is: how can we split up two segments which are < segment_duration
-      apart from each other? We could just lower the segment duration to an infinitesimal number.
-    - 2 ideas on how to do run the segmentation
-       1. Compress and RMS split
-       2. Find peaks
-
-    # Way 1
     1. Noise reduce
     2. Bandpass filter
         - Eliminate powerful high frequencies which are likely noise.
         - Save the audio at this point as we will use it later to check amplitudes.
-    3. Compress
-        - Because Librosa's split function not only 
-    4. Split
-        - Librosa has a topdb parameter which acts as the noise threshold.
-          It effectively gates everything below this threshold. This is helpful
-        - We want to 
-
-    # Way 2
-    1. Noise reduce
-    2. Bandpass filter
-    3. Find peaks
     '''
-
     no_noise = nr.reduce_noise(y=data, sr=sr)
     np.save("no_noise", no_noise)
     wavfile.write("temp/reduced_noise.wav", sr, no_noise)
 
-    # Bandpass filter to remove high frequency noise
     sos = signal.butter(5, [200, 5000], 'bandpass', fs=sr, output='sos')
     filtered = signal.sosfilt(sos, no_noise)
+    return filtered
 
-    # take absolute value to get amplitude rather than actual signal
-    amplitude_over_time = np.absolute(filtered)
-    noise_floor = calculate_rms_noise(amplitude_over_time)
+def segment(data: np.ndarray, sr: int, segment_length: float):
+    '''
+    Find peaks
+    Return audio ranges in terms of samples
+    '''
+    noise_floor = calculate_rms_noise(data)
     # peak_indices, props = signal.find_peaks(filtered, height=noise_floor, width=sr/512)
     # print(len(peak_indices))
     # print(f'data: {data.shape}')
@@ -114,7 +102,7 @@ def segment_audio(data: np.ndarray, sr: int):
     
     # Widths: convolution array length
     # Window size: size of window when evaluating if there is a peak or not
-    # peak_indices = signal.find_peaks_cwt(amplitude_over_time, widths=(sr/5), window_size=sr/16)
+    # peak_indices = signal.find_peaks_cwt(data, widths=(sr/5), window_size=sr/16)
     # print(len(peak_indices))
     # x = np.arange(0, data.shape[0], 1)
     # print(f'x: {x.size}')
@@ -124,14 +112,9 @@ def segment_audio(data: np.ndarray, sr: int):
     # Convolution actually made librosa peak finding perform with more false positives on notes with long decay
     # kernel = np.linspace(1, 0, 5)
     # print(kernel)
-    # smoothed = np.convolve(amplitude_over_time, kernel, mode='same')
+    # smoothed = np.convolve(data, kernel, mode='same')
     
-    # Let's do 0.104 seconds per hit--that's high enough resolution for 16th notes at 144bpm.
-    # Quarter note
-    MAX_BPM = 144
-    MIN_SECONDS_PER_BEAT = 60/MAX_BPM
-    SIXTEENTH_MIN_LENGTH_SEC = MIN_SECONDS_PER_BEAT/4
-    sixteenth_min_length_samples = int(SIXTEENTH_MIN_LENGTH_SEC * sr)
+    sixteenth_min_length_samples = int(segment_length * sr)
 
     # Librosa peak finding
     min_thirtysecond_samples = sixteenth_min_length_samples / 2
@@ -142,14 +125,14 @@ def segment_audio(data: np.ndarray, sr: int):
     delta = noise_floor
     wait = min_thirtysecond_samples
     mask = False
-    peak_indices = librosa.util.peak_pick(amplitude_over_time, pre_max=pre_max, post_max=post_max, pre_avg=pre_avg, post_avg=post_avg, delta=delta, wait=wait, sparse=not mask)
+    peak_indices = librosa.util.peak_pick(data, pre_max=pre_max, post_max=post_max, pre_avg=pre_avg, post_avg=post_avg, delta=delta, wait=wait, sparse=not mask)
     print(len(peak_indices))
     x = np.arange(0, data.shape[0], 1)
     y = np.zeros(data.shape)
     y[peak_indices] = 1
 
     plt.plot(x, y)
-    plt.plot(x, amplitude_over_time)
+    plt.plot(x, data)
     plt.ylabel('amplitude')
     plt.xlabel('samples')
     plt.savefig("amplitude_librosa.png")
@@ -162,23 +145,44 @@ def segment_audio(data: np.ndarray, sr: int):
         range_start = peak_index - unit
         range_end = peak_index + 9 * unit
         ranges.append((range_start, range_end))
+    return ranges
+
+def segments_to_ffts(data: np.ndarray, segments, sr: int, segment_length: float):
+    sixteenth_min_length_samples = int(segment_length * sr)
 
     ffts = []
-    for start, stop in ranges:
-        ffts.append(np.fft.fft(filtered[start:stop]))
+    for start, stop in segments:
+        ffts.append(np.fft.fft(data[start:stop]))
     
     print(ffts[0].size)
 
     for i, fft in enumerate(ffts):
         plt.clf()
         x = np.fft.fftfreq(sixteenth_min_length_samples, 1/sr)
-        # Only get positive values
+        # Only get positive x values
         freq_lower = 0
         freq_upper = sixteenth_min_length_samples//2
         plt.plot(x[freq_lower:freq_upper], np.abs(fft[freq_lower:freq_upper]))
         plt.ylabel('amplitude')
         plt.xlabel('Hz')
         plt.savefig(f'fft{i}.png')
+    return ffts
+
+def process_audio(data: np.ndarray, sr: int):
+    '''
+    1. Clean the audio
+    2. Segment the audio
+    3. Create FFTs
+    4. Use clustering on the FFTs
+    '''
+
+    # take absolute value to get amplitude rather than actual signal
+    filtered = preprocess_audio(data, sr)
+    amplitude_over_time = np.absolute(filtered)
+
+    segment_length_sec = SIXTEENTH_MIN_LENGTH_SEC
+    segments = segment(amplitude_over_time, sr, segment_length_sec)
+    ffts = segments_to_ffts(filtered, segments, sr, segment_length_sec)
 
 def main():
 
@@ -202,7 +206,7 @@ def main():
     data, sr = librosa.load(path, sr = desired_rate)
     np.save("data", data)
 
-    segment_audio(data, sr)
+    process_audio(data, sr)
 
     # normalized = no_noise / np.max(no_noise)
     # np.save("normalized", normalized)
