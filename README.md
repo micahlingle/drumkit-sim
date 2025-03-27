@@ -12,9 +12,9 @@ Librosa peak finding seems a bit faster, possibly more intuitive. I think it for
 
 Here's the new graphs:
 
-![](https://i.postimg.cc/w3TwczBx/amplitude-librosa.png)
+![](https://i.postimg.cc/8kLxGPQv/amplitude-librosa.png)
 
-![](https://i.postimg.cc/7bsmKRC3/amplitude-librosa2.png)
+![](https://i.postimg.cc/RV9yZ54D/amplitude-librosa2.png)
 
 ### Mar 25, 2025
 Added peak finding algorithm (with ≥80% accuracy in initial tests!)
