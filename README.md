@@ -5,15 +5,6 @@ This will be accomplished by analyzing user-inputted audio recordings of users d
 # Updates
 ### Mar 26, 2025
 
-#### Implemented segmentation and FFT
-Segmented audio and implemented FFT with graph. We can now see our results
-
-![](readme-assets/fft_0_0.png)
-![](readme-assets/fft_0_1.png)
-
-![](readme-assets/fft_0_2.png)
-![](readme-assets/fft_0_3.png)
-
 #### Improved peak finding algorithm
 
 I noticed that peaks were slightly right-shifted. I wanted to make them accurate to the initial attack of the note. 
@@ -25,6 +16,45 @@ Here's the new graphs:
 ![](readme-assets/peak_finding_1_0.png)
 
 ![](readme-assets/peak_finding_1_1.png)
+
+#### Segmentation and clustering
+The grand finale (of today's updates, anyway)!
+
+After all this time, I've finally done it--implemented clustering. Here's the breakdown:
+
+I've recorded a new sample, `datasets/3sounds.wav`, which 3 different kinds of sounds with two samples of each.
+
+First, we clean the audio data and grab the peaks. We can see we found 6 of them! Perfect. (audio is orange, while peaks are represented as blue)
+
+![](readme-assets/peaks_3sounds.png)
+
+Then, we convert them to FFT frequencies. We can graph the output as such. Pretty cool how they look similar, right? All according to plan.
+
+![](readme-assets/fft_1_0.png)
+![](readme-assets/fft_1_1.png)
+![](readme-assets/fft_1_2.png)
+![](readme-assets/fft_1_3.png)
+![](readme-assets/fft_1_4.png)
+![](readme-assets/fft_1_5.png)
+
+Finally, we run the Gaussian mixture model.... "drum"-roll, please! (Am I ready for fatherhood?)
+
+```
+File name: ./datasets/3sounds.wav
+Sampling (frame) rate =  48000
+Total samples (frames) =  174080
+Duration =  3.6266666666666665
+./datasets/3sounds.wav
+6
+5000
+[2 2 0 0 1 1]
+```
+
+We can see that our program realized out of those 6 sounds, the two consecutive ones were the most similar. Nice! We'll have to do a bigger test soon to see how well it really works!
+
+Long-term, the idea is to be able to do a mixed model to capture two "drums" being hit at the same time. However, I think the functions I'm using right now simply give back the label with the highest probability. (I suppose if we're finding the distance of the datapoint to the cluster, ever model has multiple probabilities, but it's easy enough to change later.)
+
+Next goal is probably to integrate MIDI output to get an end-to-end demo working.
 
 ### Mar 25, 2025
 Added peak finding algorithm (with ≥80% accuracy in initial tests!)
