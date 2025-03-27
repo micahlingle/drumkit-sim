@@ -79,7 +79,7 @@ def preprocess_audio(data: np.ndarray, sr: int):
         - Save the audio at this point as we will use it later to check amplitudes.
     '''
     no_noise = nr.reduce_noise(y=data, sr=sr)
-    np.save("no_noise", no_noise)
+    # np.save("no_noise", no_noise)
     wavfile.write("temp/reduced_noise.wav", sr, no_noise)
 
     sos = signal.butter(5, [200, 5000], 'bandpass', fs=sr, output='sos')
@@ -145,7 +145,7 @@ def segment(data: np.ndarray, sr: int, segment_length: float):
         range_start = peak_index - unit
         range_end = peak_index + 9 * unit
         ranges.append((range_start, range_end))
-    return ranges
+    return peak_indices, ranges
 
 def segments_to_ffts(data: np.ndarray, segments, sr: int, segment_length: float):
     sixteenth_min_length_samples = int(segment_length * sr)
@@ -155,25 +155,27 @@ def segments_to_ffts(data: np.ndarray, segments, sr: int, segment_length: float)
         ffts.append(np.fft.fft(data[start:stop]))
     
     print(ffts[0].size)
-
+    real_ffts = []
     for i, fft in enumerate(ffts):
         plt.clf()
         x = np.fft.fftfreq(sixteenth_min_length_samples, 1/sr)
         # Only get positive x values
         freq_lower = 0
         freq_upper = sixteenth_min_length_samples//2
-        plt.plot(x[freq_lower:freq_upper], np.abs(fft[freq_lower:freq_upper]))
+        fft_x = x[freq_lower:freq_upper]
+        fft_y = np.abs(fft[freq_lower:freq_upper])
+        real_ffts.append(fft_y)
+        plt.plot(fft_x, fft_y)
         plt.ylabel('amplitude')
         plt.xlabel('Hz')
         plt.savefig(f'fft{i}.png')
-    return ffts
+    return real_ffts
 
 def process_audio(data: np.ndarray, sr: int):
     '''
     1. Clean the audio
     2. Segment the audio
     3. Create FFTs
-    4. Use clustering on the FFTs
     '''
 
     # take absolute value to get amplitude rather than actual signal
@@ -181,8 +183,18 @@ def process_audio(data: np.ndarray, sr: int):
     amplitude_over_time = np.absolute(filtered)
 
     segment_length_sec = SIXTEENTH_MIN_LENGTH_SEC
-    segments = segment(amplitude_over_time, sr, segment_length_sec)
+    peaks, segments = segment(amplitude_over_time, sr, segment_length_sec)
     ffts = segments_to_ffts(filtered, segments, sr, segment_length_sec)
+    return amplitude_over_time, peaks, ffts
+
+def cluster(ffts, n):
+    '''
+    Cluster ffts where n represents number of clusters.
+    '''
+    model = GaussianMixture(n)
+    labels = model.fit_predict(ffts)
+    print(labels)
+
 
 def main():
 
@@ -198,15 +210,18 @@ def main():
 
 
     # paths = get_paths()
-    path = "./datasets/snaps.wav"
+    path = "./datasets/3sounds.wav"
     wave_analytics(path)
 
     print(path)
     
     data, sr = librosa.load(path, sr = desired_rate)
-    np.save("data", data)
+    # np.save("data", data)
 
-    process_audio(data, sr)
+    # Use peaks and amplitudes to get amplitudes at peaks.
+    # Use FFTs for clustering
+    amplitude_audio, peaks, ffts = process_audio(data, sr)
+    cluster(ffts, num_drums)
 
     # normalized = no_noise / np.max(no_noise)
     # np.save("normalized", normalized)
