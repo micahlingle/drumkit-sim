@@ -3,6 +3,7 @@
 *.npy
 *.png
 temp/
+debug/
 
 # MacOS
 .DS_Store

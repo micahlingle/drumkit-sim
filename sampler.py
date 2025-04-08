@@ -15,6 +15,7 @@ from sklearn.mixture import GaussianMixture
 import noisereduce as nr
 import matplotlib.pyplot as plt
 
+debug = False
 
 # Find paths to audio files
 def get_paths(p = "./datasets/"):
@@ -79,8 +80,7 @@ def preprocess_audio(data: np.ndarray, sr: int):
         - Save the audio at this point as we will use it later to check amplitudes.
     '''
     no_noise = nr.reduce_noise(y=data, sr=sr)
-    # np.save("no_noise", no_noise)
-    wavfile.write("temp/reduced_noise.wav", sr, no_noise)
+    wavfile.write("debug/reduced_noise.wav", sr, no_noise)
 
     sos = signal.butter(5, [200, 5000], 'bandpass', fs=sr, output='sos')
     filtered = signal.sosfilt(sos, no_noise)
@@ -126,16 +126,17 @@ def segment(data: np.ndarray, sr: int, segment_length: float):
     wait = min_thirtysecond_samples
     mask = False
     peak_indices = librosa.util.peak_pick(data, pre_max=pre_max, post_max=post_max, pre_avg=pre_avg, post_avg=post_avg, delta=delta, wait=wait, sparse=not mask)
-    print(len(peak_indices))
     x = np.arange(0, data.shape[0], 1)
     y = np.zeros(data.shape)
     y[peak_indices] = 1
 
-    plt.plot(x, y)
-    plt.plot(x, data)
-    plt.ylabel('amplitude')
-    plt.xlabel('samples')
-    plt.savefig("amplitude_librosa.png")
+    if debug:
+        print(f"Number of peaks: {len(peak_indices)}")
+        plt.plot(x, y)
+        plt.plot(x, data)
+        plt.ylabel('amplitude')
+        plt.xlabel('samples')
+        plt.savefig("debug/amplitude_librosa.png")
 
     # # Get audio around the time of the peak
     # for peak_index in peak_indices:
@@ -154,7 +155,6 @@ def segments_to_ffts(data: np.ndarray, segments, sr: int, segment_length: float)
     for start, stop in segments:
         ffts.append(np.fft.fft(data[start:stop]))
     
-    print(ffts[0].size)
     real_ffts = []
     for i, fft in enumerate(ffts):
         plt.clf()
@@ -165,10 +165,11 @@ def segments_to_ffts(data: np.ndarray, segments, sr: int, segment_length: float)
         fft_x = x[freq_lower:freq_upper]
         fft_y = np.abs(fft[freq_lower:freq_upper])
         real_ffts.append(fft_y)
-        plt.plot(fft_x, fft_y)
-        plt.ylabel('amplitude')
-        plt.xlabel('Hz')
-        plt.savefig(f'fft{i}.png')
+        if debug:
+            plt.plot(fft_x, fft_y)
+            plt.ylabel('amplitude')
+            plt.xlabel('Hz')
+            plt.savefig(f'debug/fft{i}.png')
     return real_ffts
 
 def process_audio(data: np.ndarray, sr: int):
@@ -193,21 +194,19 @@ def cluster(ffts, n):
     '''
     model = GaussianMixture(n)
     labels = model.fit_predict(ffts)
-    print(labels)
-
+    if debug:
+        print(labels)
 
 def main():
 
     parser = ap.ArgumentParser()
-    parser.add_argument("--sample-rate", type = int, default=48000)
-    parser.add_argument("--num-drums", type = int, default=3)
-    # Default of 200ms because average is 242 based on my testing.
-    parser.add_argument("--segment-duration", type = int, default=200)
+    parser.add_argument("--num-drums", type = int, default=3, help="Number of drums in the recording")
+    parser.add_argument("--debug", action='store_true', help="")
 
     args = parser.parse_args()
-    desired_rate = args.sample_rate
     num_drums = args.num_drums
-
+    global debug
+    debug = args.debug
 
     # paths = get_paths()
     path = "./datasets/3sounds.wav"
@@ -215,17 +214,15 @@ def main():
 
     print(path)
     
-    data, sr = librosa.load(path, sr = desired_rate)
-    # np.save("data", data)
+    data, sample_rate = librosa.load(path)
 
     # Use peaks and amplitudes to get amplitudes at peaks.
     # Use FFTs for clustering
-    amplitude_audio, peaks, ffts = process_audio(data, sr)
+    amplitude_audio, peaks, ffts = process_audio(data, sample_rate)
     cluster(ffts, num_drums)
 
     # normalized = no_noise / np.max(no_noise)
     # np.save("normalized", normalized)
-
 
 
 if (__name__ == "__main__"):
