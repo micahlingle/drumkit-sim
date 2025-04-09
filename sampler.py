@@ -14,6 +14,10 @@ from sklearn.cluster import DBSCAN, KMeans
 from sklearn.mixture import GaussianMixture
 import noisereduce as nr
 import matplotlib.pyplot as plt
+import soundfile as sf
+import shutil
+
+from midi import map_drums_to_midi
 
 debug = False
 
@@ -174,7 +178,6 @@ def segments_to_ffts(data: np.ndarray, segments, sr: int, segment_length: float)
 
     real_ffts = []
     for i, fft in enumerate(ffts):
-        plt.clf()
         x = np.fft.fftfreq(sixteenth_min_length_samples, 1 / sr)
         # Only get positive x values
         freq_lower = 0
@@ -183,6 +186,7 @@ def segments_to_ffts(data: np.ndarray, segments, sr: int, segment_length: float)
         fft_y = np.abs(fft[freq_lower:freq_upper])
         real_ffts.append(fft_y)
         if debug:
+            plt.clf()
             plt.plot(fft_x, fft_y)
             plt.ylabel("amplitude")
             plt.xlabel("Hz")
@@ -190,11 +194,24 @@ def segments_to_ffts(data: np.ndarray, segments, sr: int, segment_length: float)
     return real_ffts
 
 
-def process_audio(data: np.ndarray, sr: int):
+def process_audio(
+    data: np.ndarray, sr: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[int, int], list[np.ndarray]]:
     """
     1. Clean the audio
     2. Segment the audio
     3. Create FFTs
+
+    Inputs
+    - data: 1-dimensional audio file
+    - sr: sample rate
+
+    Outputs
+    - filtered: cleaned audio after preprocessing
+    - amplitude_over_time: absolute value of filtered audio
+    - peaks: peak indices of amplitude_over_time
+    - segments: indices (in samples) surrounding the peaks
+    - ffts: y-values for amplitude of each frequency. The number of samples
     """
 
     # take absolute value to get amplitude rather than actual signal
@@ -204,7 +221,7 @@ def process_audio(data: np.ndarray, sr: int):
     segment_length_sec = SIXTEENTH_MIN_LENGTH_SEC
     peaks, segments = segment(amplitude_over_time, sr, segment_length_sec)
     ffts = segments_to_ffts(filtered, segments, sr, segment_length_sec)
-    return amplitude_over_time, peaks, ffts
+    return filtered, amplitude_over_time, peaks, segments, ffts
 
 
 def cluster(ffts, n):
@@ -215,6 +232,23 @@ def cluster(ffts, n):
     labels = model.fit_predict(ffts)
     if debug:
         print(labels)
+    return labels
+
+
+def save_all_audio_by_label(
+    path, num_drums, segments, labels, peaks, filtered, sample_rate
+):
+    """
+    Save audio to temp folder for playback/interaction
+    """
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    os.mkdir(path)
+    for i in range(num_drums):
+        os.mkdir(f"{path}/{i}")
+    for segment, label, peak in zip(segments, labels, peaks):
+        start, stop = segment
+        sf.write(f"{path}/{label}/{peak}.wav", filtered[start:stop], sample_rate)
 
 
 def main():
@@ -227,8 +261,11 @@ def main():
 
     args = parser.parse_args()
     num_drums = args.num_drums
+
     global debug
     debug = args.debug
+    if debug:
+        os.makedirs("debug", exist_ok=True)
 
     # paths = get_paths()
     path = "./datasets/3sounds.wav"
@@ -240,11 +277,13 @@ def main():
 
     # Use peaks and amplitudes to get amplitudes at peaks.
     # Use FFTs for clustering
-    amplitude_audio, peaks, ffts = process_audio(data, sample_rate)
-    cluster(ffts, num_drums)
-
-    # normalized = no_noise / np.max(no_noise)
-    # np.save("normalized", normalized)
+    filtered, amplitude_audio, peaks, segments, ffts = process_audio(data, sample_rate)
+    labels = cluster(ffts, num_drums)
+    tmp_path = "temp"
+    save_all_audio_by_label(
+        tmp_path, num_drums, segments, labels, peaks, filtered, sample_rate
+    )
+    drum_to_midi_map = map_drums_to_midi(num_drums, tmp_path)
 
 
 if __name__ == "__main__":
