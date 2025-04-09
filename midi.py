@@ -31,8 +31,17 @@ def play_audio(file_path):
 def map_drums_to_midi(
     num_drums,
     path_temp,
-):
-    # Map label i to drum sound
+) -> dict[int, int]:
+    """
+    Map label i to drum sound using user input
+
+    Input
+    - num_drums:
+    - path_temp: Path to temp directory where files have already been written for playback
+
+    Output
+    - Dictionary mapping drum label to MIDI note value
+    """
     drum_to_midi_mapping = {}
     for i in range(num_drums):
         # Get full paths of audio files that we just exported
