@@ -3,6 +3,16 @@ The goal of this project is to create realistic MIDI drum tracks which are not t
 This will be accomplished by analyzing user-inputted audio recordings of users drumming on any number of distinct surfaces which have unique timbres. Each drum sound hit will then be recognized, isolated, and normalized. Tone and tambre will then be recognized by performing machine learning on audio samples; each distinct surface being hit in the recording will be mapped to a virtual, simulated drum. Then, the program will insert samples depending on cluster labelings and amplitudes, creating a new drum track.
 
 # Updates
+### Apr 9, 2025
+
+MIDI is now working!
+
+I was able to use `3sounds.wav` and converted that to MIDI notes, which can be seen here in Logic Pro:
+
+![](readme-assets/midi_0.png)
+
+I've also added a text-based GUI which allows the user to map each sound to a drum.
+
 ### Mar 26, 2025
 
 #### Improved peak finding algorithm
