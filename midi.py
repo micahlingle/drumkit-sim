@@ -1,5 +1,6 @@
 import os
 import subprocess
+from mido import MidiFile, MidiTrack, Message, second2tick, bpm2tempo
 
 COMMANDS = ["n", "p"]
 DRUMS = {
@@ -74,3 +75,58 @@ def map_drums_to_midi(
         drum_to_midi_mapping[i] = DRUMS[user_input]
         print(f"Set drum {i} to {user_input}.")
     return drum_to_midi_mapping
+
+
+# 480 ticks per beat is higher standard amount
+# https://mido.readthedocs.io/en/stable/files/midi.html#converting-between-ticks-and-seconds
+TICKS_PER_BEAT = 480
+
+
+def write_midi(
+    peaks: list,
+    labels: list,
+    velocities: list,
+    drum_to_midi_map: dict,
+    sr: int,
+    bpm: int,
+    time_signature: tuple[int, int],
+):
+    midi_file = MidiFile()
+    midi_file.ticks_per_beat = TICKS_PER_BEAT
+    # MIDI tempo is microseconds per quarter note.
+    midi_file.tempo = bpm2tempo(bpm, time_signature)
+
+    # Create a track and add it to the MIDI file
+    track = MidiTrack()
+    midi_file.tracks.append(track)
+
+    # Add messages to the track
+    # track.append(Message('program_change', program=12, time=0))
+    tick_curr = 0
+    tick_prev = 0
+    for peak, label, velocity in zip(peaks, labels, velocities):
+        tick_curr = second2tick(peak / sr, midi_file.ticks_per_beat, midi_file.tempo)
+        delta = tick_curr - tick_prev
+        track.append(
+            Message(
+                "note_on",
+                note=drum_to_midi_map[label],
+                velocity=velocity,
+                time=delta,
+            )
+        )
+        track.append(
+            Message(
+                "note_off",
+                note=drum_to_midi_map[label],
+                velocity=velocity,
+                time=second2tick(
+                    peak / sr + 0.1, midi_file.ticks_per_beat, midi_file.tempo
+                ),
+            )
+        )
+
+        tick_prev = tick_curr
+
+    # Save the MIDI file
+    midi_file.save("debug/my.mid")

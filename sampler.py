@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import soundfile as sf
 import shutil
 
-from midi import map_drums_to_midi
+from midi import map_drums_to_midi, write_midi
 
 debug = False
 
@@ -62,9 +62,9 @@ def sk_wave_analytics(path):
     print(data)
 
 
-def calculate_rms_noise(audio_data):
+def calculate_rms(audio_data):
     """
-    Calculates the RMS noise of an audio signal.
+    Calculates the RMS value of an audio signal.
 
     Args:
       audio_data: A NumPy array representing the audio signal.
@@ -102,7 +102,7 @@ def segment(data: np.ndarray, sr: int, segment_length: float):
     Find peaks
     Return audio ranges in terms of samples
     """
-    noise_floor = calculate_rms_noise(data)
+    noise_floor = calculate_rms(data)
     # peak_indices, props = signal.find_peaks(filtered, height=noise_floor, width=sr/512)
     # print(len(peak_indices))
     # print(f'data: {data.shape}')
@@ -251,16 +251,46 @@ def save_all_audio_by_label(
         sf.write(f"{path}/{label}/{peak}.wav", filtered[start:stop], sample_rate)
 
 
+def get_velocities(amplitude_audio, segments):
+    """
+    1. Calculate RMS values for each segment
+    2. Normalize
+
+    Returns a list of velocity integers for each inputted segment.
+    Note MIDI velocity is 0-127
+    """
+    amplitudes = np.zeros((len(segments)))
+    for i, segment in enumerate(segments):
+        start, stop = segment
+        rms = calculate_rms(amplitude_audio[start:stop])
+        amplitudes[i] = rms
+
+    # Normalize and scale wrt max MIDI velocity
+    normalized = amplitudes / np.max(amplitudes)
+    normalized *= 127
+    velocity_integers = normalized.astype(np.uint8)
+    return velocity_integers.tolist()
+
+
 def main():
 
     parser = ap.ArgumentParser()
+    parser.add_argument("bpm", default=60, help="Beats per minute")
     parser.add_argument(
-        "--num-drums", type=int, default=3, help="Number of drums in the recording"
+        "time_signature",
+        default=(4, 4),
+        help="Time signature. Only denominator really matters",
+    )
+    parser.add_argument(
+        "num_drums", type=int, default=3, help="Number of drums in the recording"
     )
     parser.add_argument("--debug", action="store_true", help="")
 
     args = parser.parse_args()
-    num_drums = args.num_drums
+    bpm = int(args.bpm)
+    times = args.time_signature.split("/")
+    time_signature = (int(times[0]), int(times[1]))
+    num_drums = int(args.num_drums)
 
     global debug
     debug = args.debug
@@ -271,19 +301,26 @@ def main():
     path = "./datasets/3sounds.wav"
     wave_analytics(path)
 
-    print(path)
-
     data, sample_rate = librosa.load(path)
-
-    # Use peaks and amplitudes to get amplitudes at peaks.
-    # Use FFTs for clustering
     filtered, amplitude_audio, peaks, segments, ffts = process_audio(data, sample_rate)
+    print(peaks)
     labels = cluster(ffts, num_drums)
     tmp_path = "temp"
     save_all_audio_by_label(
         tmp_path, num_drums, segments, labels, peaks, filtered, sample_rate
     )
     drum_to_midi_map = map_drums_to_midi(num_drums, tmp_path)
+    # Use peaks and amplitudes to get amplitudes at peaks.
+    velocities = get_velocities(amplitude_audio, segments)
+    write_midi(
+        peaks.tolist(),
+        labels,
+        velocities,
+        drum_to_midi_map,
+        sample_rate,
+        bpm,
+        time_signature,
+    )
 
 
 if __name__ == "__main__":
