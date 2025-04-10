@@ -115,17 +115,6 @@ def write_midi(
                 time=delta,
             )
         )
-        track.append(
-            Message(
-                "note_off",
-                note=drum_to_midi_map[label],
-                velocity=velocity,
-                time=second2tick(
-                    peak / sr + 0.1, midi_file.ticks_per_beat, midi_file.tempo
-                ),
-            )
-        )
-
         tick_prev = tick_curr
 
     # Save the MIDI file
