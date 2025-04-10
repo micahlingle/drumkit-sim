@@ -1,7 +1,5 @@
 # Project
-*.wav
 *.npy
-*.png
 temp/
 debug/
 
