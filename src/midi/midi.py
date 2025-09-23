@@ -1,6 +1,7 @@
 import os
 import subprocess
 from mido import MidiFile, MidiTrack, Message, second2tick, bpm2tempo
+from src.utils import file_utils
 
 COMMANDS = ["n", "p"]
 DRUMS = {
@@ -20,13 +21,31 @@ DRUMS = {
 DRUMS_LIST = list(DRUMS.keys())
 
 
-def play_audio(file_path):
-    try:
-        subprocess.run(["afplay", file_path], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error playing audio: {e}")
-    except FileNotFoundError:
-        print("afplay command not found. Ensure it is available on your system.")
+def classify_audio_and_export_midi(
+    num_drums,
+    segments,
+    labels,
+    peaks,
+    cleaned_audio,
+    sample_rate,
+    velocities,
+    bpm,
+    time_signature,
+):
+    tmp_path = "temp"
+    file_utils.save_all_audio_by_label(
+        tmp_path, num_drums, segments, labels, peaks, cleaned_audio, sample_rate
+    )
+    drum_to_midi_map = map_drums_to_midi(num_drums, tmp_path)
+    write_midi(
+        peaks.tolist(),
+        labels,
+        velocities,
+        drum_to_midi_map,
+        sample_rate,
+        bpm,
+        time_signature,
+    )
 
 
 def map_drums_to_midi(
@@ -118,4 +137,15 @@ def write_midi(
         tick_prev = tick_curr
 
     # Save the MIDI file
-    midi_file.save("debug/my.mid")
+    output_path = "debug/my.mid"
+    midi_file.save(output_path)
+    print(f"Saved MIDI file to {output_path}")
+
+
+def play_audio(file_path):
+    try:
+        subprocess.run(["afplay", file_path], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error playing audio: {e}")
+    except FileNotFoundError:
+        print("afplay command not found. Ensure it is available on your system.")

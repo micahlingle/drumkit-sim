@@ -2,7 +2,31 @@
 The goal of this project is to create realistic MIDI drum tracks which are not time-quantized and retain natural dynamic contrast.
 This will be accomplished by analyzing user-inputted audio recordings of users drumming on any number of distinct surfaces which have unique timbres. Each drum sound hit will then be recognized, isolated, and normalized. Tone and tambre will then be recognized by performing machine learning on audio samples; each distinct surface being hit in the recording will be mapped to a virtual, simulated drum. Then, the program will insert samples depending on cluster labelings and amplitudes, creating a new drum track.
 
+# Using this package
+Run the interactive code
+```
+python3 -m src.app.main
+```
+
+To test, run
+```
+
+```
+
+To format, run
+```
+black .
+```
+
+Dependencies are listed in requirements.txt. To save them, run
+```
+python3 -m pip freeze > requirements.txt
+```
+
 # Updates
+### Sept 23, 2025
+Overhauled the project's file structure to logically separate components. This also comes in preparation for a training and validation framework.
+
 ### Apr 9, 2025
 
 MIDI is now working!
@@ -96,6 +120,3 @@ Trials to be run
 * Soft-clustering techniques
 * Different eps for DBSCAN
 * Using CNN to process a Mel Spectrogram
-
-# Dependencies
-`python3 -m pip freeze > requirements.txt`
