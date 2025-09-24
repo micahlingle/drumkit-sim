@@ -10,7 +10,7 @@ python3 -m src.app.main
 
 To test, run
 ```
-
+python3 -m pytest test/simulation/test_simulation.py -v
 ```
 
 To format, run
