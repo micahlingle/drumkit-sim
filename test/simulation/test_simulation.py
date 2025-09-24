@@ -35,7 +35,9 @@ def validate_audio_file(params: TestParams):
     peaks, segments, _ = segmentation.segment_audio(cleaned_audio, sample_rate)
     peaks_difference = abs(params.expected_peaks - len(peaks))
     peaks_accuracy = (params.expected_peaks - peaks_difference) / params.expected_peaks
-    assert peaks_accuracy >= params.expected_peaks_accuracy, f"\tNum Peaks: {len(peaks)}\n\tExpected Num Peaks: {params.expected_peaks}"
+    assert (
+        peaks_accuracy >= params.expected_peaks_accuracy
+    ), f"\tNum Peaks: {len(peaks)}\n\tExpected Num Peaks: {params.expected_peaks}"
 
     # Extract features from the data set
     # Group the objects in the data set by clustering
@@ -46,7 +48,9 @@ def validate_audio_file(params: TestParams):
     y_hat = validation_utils.normalize_labels(labels)
     y = validation_utils.normalize_labels(params.expected_labels)
     accuracy = validation_utils.calculate_label_prediction_accuracy(y_hat, y)
-    assert accuracy >= params.expected_label_accuracy, f"\tPredictions: {y_hat}\n\tExpected Labels: {y}"
+    assert (
+        accuracy >= params.expected_label_accuracy
+    ), f"\tPredictions: {y_hat}\n\tExpected Labels: {y}"
 
 
 def test_3sounds():
@@ -98,7 +102,35 @@ def test_2tapsLong():
         num_drums=2,
         expected_peaks=27,
         expected_peaks_accuracy=0.9,
-        expected_labels=[0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+        expected_labels=[
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+        ],
         expected_label_accuracy=0.9,
     )
     validate_params(params)
