@@ -24,3 +24,23 @@ def normalize_labels(labels: list[int]):
                 new_labels[j] = nth_label_idx
 
     return new_labels
+
+
+def calculate_label_prediction_accuracy(y_hat: list[int], y: list[int]) -> int:
+    """
+    Compare two lists of labels, and return the number of mismatches
+    and percent mismatches
+
+    y_hat: ground truth
+    y: predictions
+    """
+
+    mismatches = 0
+    length_difference = len(y_hat) - len(y)
+    minimum = min(len(y_hat), len(y))
+    for i in range(minimum):
+        if y_hat[i] != y[i]:
+            mismatches += 1
+    mismatches += abs(length_difference)
+    percent_accuracy = abs(len(y_hat) - mismatches) / len(y_hat)
+    return percent_accuracy
