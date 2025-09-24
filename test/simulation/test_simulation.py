@@ -1,7 +1,7 @@
 import pytest
 from src.audio import preprocessing, segmentation, extraction
 from src.clustering import clustering
-
+from src.utils.transformation_utils import normalize_labels
 
 class TestParams:
     def __init__(
