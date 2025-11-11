@@ -27,6 +27,18 @@ def clean_audio(data: np.ndarray, sr: int):
     filtered = signal.sosfilt(sos, no_noise)
     return filtered
 
+def boost_low_end(data: np.ndarray,cutoff_freq: int = 100, amplification_factor: float = 3):
+    # Define the cutoff frequency and amplification factor
+
+    # Create a mask for low frequencies
+    # Use abs(xf) to cover both positive and negative frequency components (for real signal symmetry)
+    low_freq_mask = np.abs(data) < cutoff_freq
+
+    # Amplify the selected frequencies
+    yf_amplified = data.copy()
+    yf_amplified[low_freq_mask] *= amplification_factor
+    return yf_amplified
+
 
 def print_wave_analytics(path: str):
     """Python's wave analytics"""
