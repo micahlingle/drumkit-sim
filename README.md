@@ -25,6 +25,13 @@ python3 -m pip freeze > requirements.txt
 ```
 
 # Updates
+### Nov 11, 2025
+Added double stops source code, unit, and simulation tests.
+
+However, the new simulation test (and sample) is currently failing because the FFTs are not normalized enough. Lower frequency sounds are being considered overall lower amplitude. We need to scale the amplitudes by some kind of inverse function to boost lower frequencies while lowering higher frequencies. This may be due to the fact that there are more points which can be sampled at lower amplitudes due to the nature of sound waves.
+
+![](readme-assets/2025-11-10_amplitude_issue.png)
+
 ### Sept 23, 2025
 Overhauled the project's file structure to logically separate components. This also comes in preparation for a training and validation framework.
 
