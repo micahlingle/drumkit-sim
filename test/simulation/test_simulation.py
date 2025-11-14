@@ -156,8 +156,8 @@ def test_double_stops():
     individual_hits = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     for _ in range(2):
         expected_labels.extend(individual_hits)
-    # {stomp glass}, {stomp glass}, {stomp table}, glass
-    double_stops = [{1, 2}, {1, 2}, {0, 2}, 1]
+    # {stomp glass}, {stomp glass}, {table glass}, glass
+    double_stops = [{1, 2}, {1, 2}, {0, 1}, 1]
     for _ in range(4):
         expected_labels.extend(double_stops)
 
