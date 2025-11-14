@@ -19,7 +19,7 @@ def main():
     peaks, segments, velocities = segmentation.segment_audio(cleaned_audio, sample_rate)
 
     # Extract features from the data set
-    ffts = extraction.segments_to_ffts(cleaned_audio, segments, sample_rate)
+    ffts = extraction.segments_to_features(cleaned_audio, segments, sample_rate)
 
     # Group the objects in the data set by clustering
     labels = clustering.cluster(ffts, args.num_drums)

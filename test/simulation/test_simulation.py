@@ -29,10 +29,10 @@ class TestParams:
 def validate_audio_file(params: TestParams):
     # Preprocess data
     data, sample_rate = preprocessing.load_audio(params.path)
-    # cleaned_audio = preprocessing.clean_audio(data, sample_rate)
+    cleaned_audio = preprocessing.clean_audio(data, sample_rate)
 
     # Create a data set by segmenting audio
-    peaks, segments, _ = segmentation.segment_audio(data, sample_rate, debug=True)
+    peaks, segments, _ = segmentation.segment_audio(cleaned_audio, sample_rate, debug=True)
     peaks_difference = abs(params.expected_peaks - len(peaks))
     peaks_accuracy = (params.expected_peaks - peaks_difference) / params.expected_peaks
     assert (
@@ -41,7 +41,7 @@ def validate_audio_file(params: TestParams):
 
     # Extract features from the data set
     # Group the objects in the data set by clustering
-    ffts = extraction.segments_to_ffts(data, segments, sample_rate, debug=True)
+    ffts = extraction.segments_to_features(data, segments, sample_rate, debug=True)
     labels = clustering.cluster(ffts, params.num_drums, debug=True)
 
     # Validate clustering happened into expected groups
@@ -156,11 +156,11 @@ def test_double_stops():
     individual_hits = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     for _ in range(2):
         expected_labels.extend(individual_hits)
-    # {stomp glass}, {stomp glass}, {stomp table}, glass 
+    # {stomp glass}, {stomp glass}, {stomp table}, glass
     double_stops = [{1, 2}, {1, 2}, {0, 2}, 1]
     for _ in range(4):
         expected_labels.extend(double_stops)
-    
+
     params = TestParams(
         path="datasets/Double_stops_3.wav",
         num_drums=3,
