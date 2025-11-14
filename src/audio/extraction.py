@@ -14,7 +14,7 @@ def segments_to_features(
     Convert audio segments to features
     '''
     ffts = segments_to_ffts(data, segments, sr, segment_length, debug)
-    features = extract_peaks(ffts, n=2)
+    features = extract_peaks(ffts, n=8)
     return features
 
 

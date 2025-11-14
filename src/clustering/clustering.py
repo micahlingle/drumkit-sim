@@ -7,14 +7,17 @@ def cluster(features: list[np.ndarray], n: int, threshold=0.1, similarity= 0.2, 
     Cluster features where n represents number of clusters.
     """
     model = GaussianMixture(n, covariance_type=covariance_type, random_state=random_seed)
-    print(f"len: {len(features)}")
-    # # normalize by logging?
-    # features = np.log10(features)
-    print(features[0])
+    if debug:
+        print(f"len: {len(features)}")
+        print(features[0])
 
 
     # Train on TK% of the data so that predictions will not be overfit.
-    model.fit(features[:int(len(features) * .5)])
+    # Randomly select half the data
+    # random_indices = np.random.choice(len(features), size=int(len(features)/2), replace=False)
+    # training_data = features[random_indices]
+
+    model.fit(features)
     p = model.predict_proba(features)
     if debug:
         print(f"p: {p}")
