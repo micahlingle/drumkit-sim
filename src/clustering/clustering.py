@@ -2,20 +2,20 @@ from sklearn.mixture import GaussianMixture
 import numpy as np
 
 
-def cluster(ffts: list[np.ndarray], n: int, threshold=0.1, similarity= 0.2, random_seed=42, covariance_type="diag", debug=False) -> list[int | set[int]]:
+def cluster(features: list[np.ndarray], n: int, threshold=0.1, similarity= 0.2, random_seed=42, covariance_type="diag", debug=False) -> list[int | set[int]]:
     """
-    Cluster ffts where n represents number of clusters.
+    Cluster features where n represents number of clusters.
     """
     model = GaussianMixture(n, covariance_type=covariance_type, random_state=random_seed)
-    print(f"len: {len(ffts)}")
+    print(f"len: {len(features)}")
     # # normalize by logging?
-    # ffts = np.log10(ffts)
-    print(ffts[0])
+    # features = np.log10(features)
+    print(features[0])
 
 
     # Train on TK% of the data so that predictions will not be overfit.
-    model.fit(ffts[:int(len(ffts) * .5)])
-    p = model.predict_proba(ffts)
+    model.fit(features[:int(len(features) * .5)])
+    p = model.predict_proba(features)
     if debug:
         print(f"p: {p}")
 
