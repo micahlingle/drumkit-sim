@@ -1,41 +1,40 @@
 from sklearn.mixture import GaussianMixture
 import numpy as np
 
+class Model():
 
-def cluster(features: list[np.ndarray], n: int, threshold=0.1, similarity= 0.2, random_seed=42, covariance_type="diag", debug=False) -> list[int | set[int]]:
-    """
-    Cluster features where n represents number of clusters.
-    """
-    model = GaussianMixture(n, covariance_type=covariance_type, random_state=random_seed)
-    if debug:
-        print(f"len: {len(features)}")
-        print(features[0])
+    def __init__(self, n):
+        self._model = GaussianMixture(n_components=n, covariance_type='diag', random_state=42)
+        
+    def train(self, features: list[np.ndarray], debug=False):
+        if debug:
+            print(f"len: {len(features)}")
+            print(features[0])
+        self._model.fit(features)
 
+    def test(self, features: list[np.ndarray], threshold=0.1, debug=False) -> list[int | set[int]]:
+        """
+        Cluster features where n represents number of clusters.
+        """
+        
+        p = self._model.predict_proba(features)
+        if debug:
+            print(f"p: {p}")
 
-    # Train on TK% of the data so that predictions will not be overfit.
-    # Randomly select half the data
-    # random_indices = np.random.choice(len(features), size=int(len(features)/2), replace=False)
-    # training_data = features[random_indices]
+        fuzzy_assignments = []
+        # Iterate over each row (data point) in the probabilities matrix
+        for prob_row in p:
+            # Get the indices of components where the probability is above the threshold
+            # np.where returns a tuple, we take the first element (the array of indices)
+            cluster_indices = np.where(prob_row >= threshold)[0]
+            # If thresholds are within similarity to each other, then place them in a set and append the set to fuzzy_assignments.
+            if len(cluster_indices) > 1:
+                fuzzy_assignments.append(set(cluster_indices))
 
-    model.fit(features)
-    p = model.predict_proba(features)
-    if debug:
-        print(f"p: {p}")
+            # Otherwise, append the index of the component to fuzzy_assignments
+            elif len(cluster_indices) == 1:
+                fuzzy_assignments.append(cluster_indices[0])
 
-    fuzzy_assignments = []
-    # Iterate over each row (data point) in the probabilities matrix
-    for prob_row in p:
-        # Get the indices of components where the probability is above the threshold
-        # np.where returns a tuple, we take the first element (the array of indices)
-        cluster_indices = np.where(prob_row >= threshold)[0]
-        # If thresholds are within similarity to each other, then place them in a set and append the set to fuzzy_assignments.
-        if len(cluster_indices) > 1:
-            fuzzy_assignments.append(set(cluster_indices))
-
-        # Otherwise, append the index of the component to fuzzy_assignments
-        elif len(cluster_indices) == 1:
-            fuzzy_assignments.append(cluster_indices[0])
-
-    if debug:
-        print(f"labels: {fuzzy_assignments}")
-    return fuzzy_assignments
+        if debug:
+            print(f"labels: {fuzzy_assignments}")
+        return fuzzy_assignments
