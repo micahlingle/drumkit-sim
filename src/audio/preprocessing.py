@@ -27,7 +27,10 @@ def clean_audio(data: np.ndarray, sr: int):
     filtered = signal.sosfilt(sos, no_noise)
     return filtered
 
-def boost_low_end(data: np.ndarray,cutoff_freq: int = 100, amplification_factor: float = 3):
+
+def boost_low_end(
+    data: np.ndarray, cutoff_freq: int = 100, amplification_factor: float = 3
+):
     # Define the cutoff frequency and amplification factor
 
     # Create a mask for low frequencies

@@ -1,22 +1,27 @@
 from sklearn.mixture import GaussianMixture
 import numpy as np
 
-class Model():
+
+class Model:
 
     def __init__(self, n):
-        self._model = GaussianMixture(n_components=n, covariance_type='diag', random_state=42)
-        
+        self._model = GaussianMixture(
+            n_components=n, covariance_type="diag", random_state=42
+        )
+
     def train(self, features: list[np.ndarray], debug=False):
         if debug:
             print(f"len: {len(features)}")
             print(features[0])
         self._model.fit(features)
 
-    def test(self, features: list[np.ndarray], threshold=0.1, debug=False) -> list[int | set[int]]:
+    def test(
+        self, features: list[np.ndarray], threshold=0.1, debug=False
+    ) -> list[int | set[int]]:
         """
         Cluster features where n represents number of clusters.
         """
-        
+
         p = self._model.predict_proba(features)
         if debug:
             print(f"p: {p}")

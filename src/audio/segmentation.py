@@ -9,9 +9,13 @@ MIN_SECONDS_PER_BEAT = 60 / MAX_BPM
 SIXTEENTH_MIN_LENGTH_SEC = MIN_SECONDS_PER_BEAT / 4
 
 
-def segment_audio(cleaned_data, sr, debug=False) -> tuple[np.ndarray, tuple[int, int], list[int]]:
+def segment_audio(
+    cleaned_data, sr, debug=False
+) -> tuple[np.ndarray, tuple[int, int], list[int]]:
     amplitude_over_time = np.absolute(cleaned_data)
-    peaks, segments = segment(amplitude_over_time, sr, SIXTEENTH_MIN_LENGTH_SEC, debug=debug)
+    peaks, segments = segment(
+        amplitude_over_time, sr, SIXTEENTH_MIN_LENGTH_SEC, debug=debug
+    )
     velocities = get_velocities(amplitude_over_time, segments)
     return peaks, segments, velocities
 

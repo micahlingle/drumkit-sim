@@ -4,6 +4,7 @@ from src.clustering import clustering
 from src.utils import validation_utils
 from typing import Optional
 
+
 class AudioParams:
     def __init__(
         self,
@@ -19,12 +20,13 @@ class AudioParams:
         self.expected_labels = expected_labels
         self.expected_label_accuracy = expected_label_accuracy
 
+
 class TestParams:
     def __init__(
         self,
         num_drums: int,
         audio_train: AudioParams,
-        audio_test: Optional[AudioParams] = None
+        audio_test: Optional[AudioParams] = None,
     ):
         self.num_drums = num_drums
         self.audio_test = audio_test
@@ -68,15 +70,21 @@ def train_and_test(params: TestParams):
         cleaned_audio = preprocessing.clean_audio(data, sample_rate)
 
         # Create a data set by segmenting audio
-        peaks, segments, _ = segmentation.segment_audio(cleaned_audio, sample_rate, debug=True)
+        peaks, segments, _ = segmentation.segment_audio(
+            cleaned_audio, sample_rate, debug=True
+        )
         peaks_difference = abs(audio_obj.expected_peaks - len(peaks))
-        peaks_accuracy = (audio_obj.expected_peaks - peaks_difference) / audio_obj.expected_peaks
+        peaks_accuracy = (
+            audio_obj.expected_peaks - peaks_difference
+        ) / audio_obj.expected_peaks
         assert (
             peaks_accuracy >= audio_obj.expected_peaks_accuracy
         ), f"\tNum Peaks: {len(peaks)}\n\tExpected Num Peaks: {audio_obj.expected_peaks}"
 
         # Extract features from the data set
-        features = extraction.segments_to_features(data, segments, sample_rate, debug=True)
+        features = extraction.segments_to_features(
+            data, segments, sample_rate, debug=True
+        )
 
         # Only train the model once
         if training:

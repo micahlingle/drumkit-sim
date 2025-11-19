@@ -27,10 +27,10 @@ def normalize_labels(labels: list[int | set[int]]):
         else:
             if item not in order_of_appearance:
                 order_of_appearance.append(item)
-    
+
     # Create mapping from old values to new normalized values
     value_mapping = {val: idx for idx, val in enumerate(order_of_appearance)}
-    
+
     # Apply mapping to create normalized labels
     new_labels = []
     for item in labels:
@@ -38,7 +38,7 @@ def normalize_labels(labels: list[int | set[int]]):
             new_labels.append({value_mapping[val] for val in item})
         else:
             new_labels.append(value_mapping[item])
-    
+
     return new_labels
 
 
