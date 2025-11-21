@@ -19,6 +19,7 @@ def segments_to_features(
     # features = extract_peaks(ffts, n=8)
     # return features
 
+    segments_to_ffts(data, segments, sr, segment_length, debug)
     return extract_centroids(data, segments, sr, debug)
 
 

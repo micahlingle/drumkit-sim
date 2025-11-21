@@ -100,7 +100,9 @@ def train_and_test(params: TestParams):
             accuracy >= audio_obj.expected_label_accuracy
         ), f"\tPredictions: {y_hat}\n\tExpected Labels: {y}"
 
-
+"""
+Segmentation tests
+"""
 def test_3sounds():
     params_train = AudioParams(
         path="datasets/3sounds.wav",
@@ -180,25 +182,30 @@ def test_2tapsLong():
     validate_test_params(params)
     train_and_test(params)
 
-
+"""
+Tonal tests
+"""
 def test_double_stops():
-    expected_labels = []
-    # table, glass, stomp
-    individual_hits = [0, 0, 0, 1, 1, 1, 2, 2, 2]
-    for _ in range(2):
-        expected_labels.extend(individual_hits)
-    # {stomp glass}, {stomp glass}, {table glass}, glass
-    double_stops = [{1, 2}, {1, 2}, {0, 1}, 1]
-    for _ in range(4):
-        expected_labels.extend(double_stops)
-
+    stomps_hits = [0] * 12
+    table_hits = [1] * 12
+    glass_hits = [2] * 12
+    combined_hits_training = stomps_hits + table_hits + glass_hits
     params_train = AudioParams(
-        path="datasets/Double_stops_3.wav",
-        expected_peaks=18 + 16,
+        path="datasets/3drum/3drum_training.wav",
+        expected_peaks=36,
         expected_peaks_accuracy=0.8,
-        expected_labels=expected_labels,
+        expected_labels=combined_hits_training,
         expected_label_accuracy=0.8,
     )
-    params = TestParams(num_drums=3, audio_train=params_train)
+
+    double_stops = [{1, 2}, {1, 2}, {0, 1}, 1] * 4
+    params_test = AudioParams(
+        path="datasets/3drum/3drum_test.wav",
+        expected_peaks=16,
+        expected_peaks_accuracy=0.8,
+        expected_labels=double_stops,
+        expected_label_accuracy=0.8,
+    )
+    params = TestParams(num_drums=3, audio_train=params_train, audio_test=params_test)
     validate_test_params(params)
     train_and_test(params)
