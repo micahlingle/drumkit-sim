@@ -20,32 +20,37 @@ def segments_to_features(
     # return features
 
     segments_to_ffts(data, segments, sr, segment_length, debug)
-    return extract_centroids(data, segments, sr, debug)
+    return extract_librosa_features(data, segments, sr, debug)
 
 
-def extract_centroids(
+def extract_librosa_features(
     data: np.ndarray,
     segments,
     sr: int,
     debug: bool = False,
 ) -> list[np.ndarray]:
-    """
-    Extract the centroid of each FFT
-
-    x represents frequency in Hz
-    y represents power
-    """
-    centroids = []
+    feats = []
     for start, stop in segments:
         audio_segment = data[start:stop]
-        centroid = librosa.feature.spectral_centroid(y=audio_segment, sr=sr)
-        bandwidth = librosa.feature.spectral_bandwidth(y=audio_segment, sr=sr)
-        flatness = librosa.feature.spectral_flatness(y=audio_segment)
-        rolloff = librosa.feature.spectral_rolloff(y=audio_segment, sr=sr)
-        # TODO: add more librosa built in features since they're free
-        features = np.stack([centroid, bandwidth, flatness, rolloff], axis=-1).flatten()
-        centroids.append(features)
-    return centroids
+        segment_length = stop - start
+
+        # Add MFCCs for better timbral characterization
+        mfccs = librosa.feature.mfcc(
+            y=audio_segment, sr=sr, n_mfcc=3, n_fft=segment_length, center=False
+        )
+        flatness = librosa.feature.spectral_flatness(
+            y=audio_segment, n_fft=segment_length, center=False
+        )
+
+        # Combine all features
+        features = np.concatenate(
+            [
+                mfccs.flatten(),
+                flatness.flatten(),
+            ]
+        )
+        feats.append(features)
+    return feats
 
 
 def extract_peaks(ffts: list[np.ndarray], n: int) -> list[np.ndarray]:
@@ -98,8 +103,6 @@ def segments_to_ffts(
         freq_upper = sixteenth_min_length_samples // 2
         fft_x = x[freq_lower:freq_upper]
         fft_y = np.abs(fft[freq_lower:freq_upper])
-
-        # TODO: Multiply by some function to scale up lower frequencies and soften higher
 
         fft_2d = np.stack([fft_x, fft_y], axis=-1)
         real_ffts.append(fft_2d)
