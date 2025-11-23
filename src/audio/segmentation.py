@@ -56,11 +56,13 @@ def segment(
 
     if debug:
         print(f"Number of peaks: {len(peak_indices)}")
+        plt.clf()
         plt.plot(x, y)
         plt.plot(x, data)
         plt.ylabel("amplitude")
         plt.xlabel("samples")
         plt.savefig("debug/amplitude_librosa.png")
+        plt.clf()
 
     unit = int(sixteenth_min_length_samples / 10)
     ranges = []
