@@ -100,14 +100,17 @@ def train_and_test(params: TestParams):
             accuracy >= audio_obj.expected_label_accuracy
         ), f"\tPredictions: {y_hat}\n\tExpected Labels: {y}"
 
+
 """
 Segmentation tests
 """
+
+
 def test_3sounds():
     params_train = AudioParams(
         path="datasets/3sounds.wav",
         expected_peaks=6,
-        expected_peaks_accuracy=0.9,
+        expected_peaks_accuracy=0.99,
         expected_labels=[0, 0, 1, 1, 2, 2],
         expected_label_accuracy=0.99,
     )
@@ -182,9 +185,12 @@ def test_2tapsLong():
     validate_test_params(params)
     train_and_test(params)
 
+
 """
 Tonal tests
 """
+
+
 def test_double_stops():
     stomps_hits = [0] * 12
     table_hits = [1] * 12
