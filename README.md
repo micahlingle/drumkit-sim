@@ -25,6 +25,33 @@ python3 -m pip freeze > requirements.txt
 ```
 
 # Updates
+### Nov 23, 2025
+Added Mel Frequency Cepstral Coefficients as features. Let's break that down for our use case:
+
+- A Fast Fourier Transformation (FFT) converts a representation of a signal over time to a sum of component sinusoidal frequencies. For our use case, this means a snapshot of time (maybe 22.5k samples, or half a second) transformed from amplitude-over-time to amplitude-over-frequency. It squashes the half-second and treats it as a single point in time with a width of 0.25 seconds on either side. It helps us get a view of, for a drum hit sample, "What fundamental frequencies make this sound unique?" This is one of the main tools I have used to visualize data so far.
+  - One of the great things about performing an FFT is, at a high level, it abstracts a pattern from the data. Looking at an audio file itself, you see a seemingly-random sequence of positive and negative numbers. Let's remember this concept of an FFT finding wave patterns in complex data, as it will help us later.
+- A spectrogram is a sequence of FFTs in time order. This can be used to represent change in the sound over time while still retaining the idea of fundamental frequencies. They are typically shown as colors on a 2D picture, where lighter colors represent higher amplitudes. It's like if you made an FFT into 3D, and looked down from a bird's eye view. The peaks of the mountains would be brightest.
+
+This is a great start, but has a few problems.
+
+For example, for the drumkit sim, I want to play various sounds which I can tell apart; by that logic, I believe the computer can also tell them apart. However, this is not inherently so; we need to teach the computer to think about sound the way we do. One problem is that the spectrogram is a very raw representation of the sound. It doesn't take into account human perception of sound.
+
+Another issue is that the FFT/spectrogram is quite noisy. It's not the FFT's fault, but rather the nature of our data. Despite being cleaned, sound is so finnicky that even a small change in the way the user hits an object can change its sound data drastically. For machine learning models, this is not ideal. We need a way to make the model more robust, filtering out low-level noise to get a better picture of the high-level data. Some common approaches are noise removal, smoothing data (using something like a moving average) and peak finding, etc.
+
+This is where the Mel Frequency Cepstrum (MFC) comes in.
+- "Mel" is short for melody. This is the conversion to "human hearing" I mentioned previously. It counts low frequences as more important, as they are more discernible to the human ear than different high frequencies. Consider two sound files of different quality (44.1 vs 48 kHz). You probably can't tell the difference, because that highest ~4kHz is not very distinctive to the human ear. Now, consider taking away the *lowest* 4kHz, and you've lost all 8 (count them, 8) octaves up to a B7, in terms of fundamental frequency. So, the Mel component means taking a logarithm of the domain of the FFT (frequency) to convert it to more sensible, human measurements.
+  - To do this, we are effectively dumping the amplitude data into bins of frequency size n. As the frequencies get higher, the buckets get bigger, as changes to higher frequencies don't matter as much to the human ear. Each bin will produce a single, new amplitude-datapoint for a key Mel frequency. This helps smooth out small peaks in the data as it is effectively being averaged over an interval.
+- The logged data is finally hit with another Fourier transformation to convert that data into simpler patterns and waveforms. From these layered sinusoids, we get the Mel Frequency Cepstral Coefficients.
+
+When we machine learn on these Cepstral Coefficients which have been 1) adjusted to mimic human hearing using logarithms (if I can hear the difference in the drum, so can the computer) and 2) simplified by smoothing the data, we find the results much more robust to variation in playing and noise. Training data is now 100% accurate!
+
+The last hurdle here is still getting it to recognize the double stops. Back to tweaking the GMM parameters, now that we have the right features!
+
+I find it hard to believe that anything worked initially by throwing in all 2000 samples! Machine learning is magical but not magic. I'm really impressed by the results of the MFCC-based GMM.
+
+MFCCs are not entirely robust to noise. For this reason, I've kept noise removal. However, I've also removed the function to boost lower frequencies. Now that we are using the MFCC, we can more accurately train on these low frequencies.
+
+
 ### Nov 11, 2025
 Added double stops source code, unit, and simulation tests.
 
