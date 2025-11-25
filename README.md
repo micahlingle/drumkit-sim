@@ -25,6 +25,19 @@ python3 -m pip freeze > requirements.txt
 ```
 
 # Updates
+### Nov 24, 2025
+As it turns out, MFCC is great for training and getting a great result on training data. However, it doesn't fare so well against test data, particularly for double stops.
+
+I suppose I should gather more data, or make a test which doesn't rely solely on double stops.
+
+I've added a couple bits and bobs to make things work more smoothly end to end. The first is data standardization. The naming here is taking from a standard deviation, where data is transformed to be mean=0, variance=1. This makes the data easier to comprehend for the computer, who is performing distance calculations when using clustering. This makes data a little easier for humans to understand as well, making it, well, standard. It helped me understand that a bunch of my datapoints are actually not as meaningful as I thought they were. 
+
+This opens up the idea of weighting different values to show their importance. Because we are calculating distance using clustering models, greater distance means a feature is more characteristic. I can weight these features in another update.
+
+I also experiemented with PCA. It didn't yield anything magical, but the idea is it does some linear algebra to create orthogonal components from the feature list passed in. However, it's definitely not magic, and didn't really help yet, as far as I could tell.
+
+Will keep you posted!
+
 ### Nov 23, 2025
 Added Mel Frequency Cepstral Coefficients as features. Let's break that down for our use case:
 
