@@ -2,6 +2,8 @@ import numpy as np
 from src.audio.segmentation import SIXTEENTH_MIN_LENGTH_SEC, calculate_rms
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 import librosa
 
 
@@ -20,7 +22,32 @@ def segments_to_features(
     # return features
 
     segments_to_ffts(data, segments, sr, segment_length, debug)
-    return extract_librosa_features(data, segments, sr, debug)
+    feats = extract_librosa_features(data, segments, sr, debug)
+    std = standardize(feats, debug)
+    pca_feats = pca(std, 2)
+    return pca_feats
+
+
+def pca(features: np.ndarray, n: int) -> list[np.ndarray]:
+    """
+    Perform PCA on features
+    """
+    pca = PCA(n_components=n)
+    return pca.fit_transform(features)
+
+
+def standardize(features: list[np.ndarray], debug=False) -> np.ndarray:
+    """
+    Standardize using scikit StandardScaler
+    """
+    # Convert features to 2D array
+    features = np.array(features)
+
+    scaler = StandardScaler()
+    standardized = scaler.fit_transform(features)
+    if debug:
+        print(f"std feats: {standardized}")
+    return standardized
 
 
 def extract_librosa_features(
@@ -30,7 +57,8 @@ def extract_librosa_features(
     debug: bool = False,
 ) -> list[np.ndarray]:
     feats = []
-    for start, stop in segments:
+    for i, bounds in enumerate(segments):
+        start, stop = bounds
         audio_segment = data[start:stop]
         segment_length = stop - start
 
@@ -38,15 +66,39 @@ def extract_librosa_features(
         mfccs = librosa.feature.mfcc(
             y=audio_segment, sr=sr, n_mfcc=3, n_fft=segment_length, center=False
         )
-        flatness = librosa.feature.spectral_flatness(
+
+        centroids = librosa.feature.spectral_centroid(
             y=audio_segment, n_fft=segment_length, center=False
         )
+        contrast = librosa.feature.spectral_contrast(
+            y=audio_segment,
+            n_fft=segment_length,
+            win_length=segment_length,
+            center=False,
+        )
+        zcross_rate = librosa.feature.zero_crossing_rate(
+            y=audio_segment, frame_length=segment_length, center=False
+        )
+        polynomial_coefficients = librosa.feature.poly_features(
+            y=audio_segment, n_fft=segment_length, center=False
+        )
+
+        if debug:
+            print(f"segment {i}:")
+            print(f"\tmfccs: {mfccs}")
+            print(f"\tcentroids: {centroids}")
+            print(f"\tcontrast: {contrast}")
+            print(f"\tzcross_rate: {zcross_rate}")
+            print(f"\tpolynomial_coefficients: {polynomial_coefficients}")
 
         # Combine all features
         features = np.concatenate(
             [
                 mfccs.flatten(),
-                flatness.flatten(),
+                centroids.flatten(),
+                contrast.flatten(),
+                zcross_rate.flatten(),
+                polynomial_coefficients[0],
             ]
         )
         feats.append(features)

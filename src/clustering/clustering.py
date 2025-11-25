@@ -9,14 +9,14 @@ class Model:
             n_components=n, covariance_type="diag", random_state=42
         )
 
-    def train(self, features: list[np.ndarray], debug=False):
+    def train(self, features: np.ndarray, debug=False):
         if debug:
             print(f"len: {len(features)}")
             print(features[0])
         self._model.fit(features)
 
     def test(
-        self, features: list[np.ndarray], threshold=0.1, debug=False
+        self, features: np.ndarray, threshold=0.05, debug=False
     ) -> list[int | set[int]]:
         """
         Cluster features where n represents number of clusters.
@@ -35,8 +35,6 @@ class Model:
             # If thresholds are within similarity to each other, then place them in a set and append the set to fuzzy_assignments.
             if len(cluster_indices) > 1:
                 fuzzy_assignments.append(set(cluster_indices))
-
-            # Otherwise, append the index of the component to fuzzy_assignments
             elif len(cluster_indices) == 1:
                 fuzzy_assignments.append(cluster_indices[0])
 
