@@ -204,7 +204,7 @@ def test_double_stops():
         expected_label_accuracy=0.8,
     )
 
-    double_stops = [{1, 2}, {1, 2}, {0, 1}, 1] * 4
+    double_stops = [{0, 2}, {0, 2}, {1, 2}, 2] * 4
     params_test = AudioParams(
         path="datasets/3drum/3drum_test.wav",
         expected_peaks=16,
