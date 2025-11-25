@@ -39,7 +39,7 @@ For example, for the drumkit sim, I want to play various sounds which I can tell
 Another issue is that the FFT/spectrogram is quite noisy. It's not the FFT's fault, but rather the nature of our data. Despite being cleaned, sound is so finnicky that even a small change in the way the user hits an object can change its sound data drastically. For machine learning models, this is not ideal. We need a way to make the model more robust, filtering out low-level noise to get a better picture of the high-level data. Some common approaches are noise removal, smoothing data (using something like a moving average) and peak finding, etc.
 
 This is where the Mel Frequency Cepstrum (MFC) comes in.
-- "Mel" is short for melody. This is the conversion to "human hearing" I mentioned previously. It counts low frequences as more important, as they are more discernible to the human ear than different high frequencies. Consider two sound files of different quality (44.1 vs 48 kHz). You probably can't tell the difference, because that highest ~4kHz is not very distinctive to the human ear. Now, consider taking away the *lowest* 4kHz, and you've lost all 8 (count them, 8) octaves up to a B7, in terms of fundamental frequency. So, the Mel component means taking a logarithm of the domain of the FFT (frequency) to convert it to more sensible, human measurements.
+- "Mel" is short for melody. This is the conversion to "human hearing" I mentioned previously. It counts low frequences as more important, as they are more discernible to the human ear than different high frequencies. Consider two sound files of common quality/bitrates (44.1 vs 48 kHz). You probably can't tell the difference, because that *highest* ~4kHz is not very distinctive to the human ear. Now, consider taking away the *lowest* 4kHz, and you've lost all 8 (count them, 8) octaves up to a B7, in terms of fundamental frequency. So, the Mel component means taking a logarithm of the domain of the FFT (frequency) to convert it to more sensible, human measurements. this means the lower frequencies get more representation than the higher.
   - To do this, we are effectively dumping the amplitude data into bins of frequency size n. As the frequencies get higher, the buckets get bigger, as changes to higher frequencies don't matter as much to the human ear. Each bin will produce a single, new amplitude-datapoint for a key Mel frequency. This helps smooth out small peaks in the data as it is effectively being averaged over an interval.
 - The logged data is finally hit with another Fourier transformation to convert that data into simpler patterns and waveforms. From these layered sinusoids, we get the Mel Frequency Cepstral Coefficients.
 
@@ -49,7 +49,7 @@ The last hurdle here is still getting it to recognize the double stops. Back to 
 
 I find it hard to believe that anything worked initially by throwing in all 2000 samples! Machine learning is magical but not magic. I'm really impressed by the results of the MFCC-based GMM.
 
-MFCCs are not entirely robust to noise. For this reason, I've kept noise removal. However, I've also removed the function to boost lower frequencies. Now that we are using the MFCC, we can more accurately train on these low frequencies.
+MFCCs are not entirely robust to noise. For this reason, I've kept noise removal. However, I've also removed the function to boost lower frequencies. Now that we are using the MFCC, we can more accurately weight those low frequencies into the model's consideration with respect to higher frequencies.
 
 
 ### Nov 11, 2025
